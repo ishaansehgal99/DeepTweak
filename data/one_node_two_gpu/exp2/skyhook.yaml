@@ -1,34 +1,118 @@
 apiVersion: skyhook.nvidia.com/v1alpha1
 kind: Skyhook
 metadata:
-  name: exp1-gpu-opt
+  name: exp5-throughput
 spec:
   nodeSelectors:
     matchLabels:
-      kubernetes.io/hostname: aks-maxlen1-37349144-vmss000000  # Replace with your node
+      kubernetes.io/hostname: aks-maxlen2-14328230-vmss000000    # ← your node
   additionalTolerations:
     - key: sku
       value: gpu
       effect: NoSchedule
+
   packages:
+
+    # ────────────────────────────
     tuning:
-      version: 1.1.3
+      version: 1.1.3                     # bump to force fresh apply
       image: ghcr.io/nvidia/skyhook-packages/tuning
+      interrupt: { type: reboot }        # needed for isolcpus / hugepages
+      configInterrupts:
+        grub.conf:        { type: reboot }
+        sysctl.conf:      { type: restartAllServices }
+        ulimit.conf:      { type: restartAllServices }
+        service_containerd.conf: { type: restartAllServices }
+
       configMap:
+
         grub.conf: |-
-          
+          default_hugepagesz=1G hugepagesz=1G hugepages=8 isolcpus=2-31 rcu_nocbs=2-31 nohz_full=2-31 intel_pstate=disable processor.max_cstate=0 iommu=pt
+
+        sysctl.conf: |-
+          vm.swappiness=10
+          vm.overcommit_memory=1
+          vm.nr_hugepages=8
+          vm.max_map_count=1024000
+          kernel.numa_balancing=0
+          fs.file-max=2097152
+          net.core.rmem_max=134217728
+          net.core.wmem_max=134217728
+          net.core.netdev_max_backlog=250000
+
+        ulimit.conf: |-
+          memlock=unlimited
+          nofile=1048576
+
+        service_containerd.conf: |-
+          [Service]
+          LimitSTACK=67108864
+          LimitMEMLOCK=infinity
+
+    # ────────────────────────────
     gpumax:
       version: 1.1.0
       image: ghcr.io/nvidia/skyhook-packages/shellscript
       configMap:
         apply.sh: |-
           #!/bin/bash
-          nvidia-smi -pm 1
-          nvidia-smi -acp 0
-          # Set max clocks - adjust if not Tesla M60
-          nvidia-smi -lgc 1177,1177
-          nvidia-smi -lmc 2505
+          set -euo pipefail
+
+          nvidia-smi -pm 1 || true
+          nvidia-smi -acp 0 || true       # ignore deprecation warning
+
+          for id in $(nvidia-smi --query-gpu=index --format=csv,noheader); do
+            # ── set max power ────────────────────────────────
+            max_pl=$(nvidia-smi -i "$id" --query-gpu=power.limit --format=csv,noheader,nounits)
+            nvidia-smi -i "$id" -pl "$max_pl" || true
+
+            # ── query highest SM clock ───────────────────────
+            max_sm=$(nvidia-smi -i "$id" --query-gpu=clocks.max.sm --format=csv,noheader,nounits | tr -d ' ')
+            nvidia-smi -i "$id" -lgc "$max_sm","$max_sm" || true
+
+            # ── try to lock memory clock (if supported) ──────
+            max_mem=$(nvidia-smi -i "$id" --query-gpu=clocks.max.memory --format=csv,noheader,nounits | tr -d ' ')
+            if nvidia-smi -i "$id" -lmc "$max_mem" 2>&1 | grep -q "not supported"; then
+              echo "Memory-clock lock not supported on GPU $id — skipping."
+            fi
+          done
+
+          # ── set NVMe scheduler ⇢ 'none' if NVMe exists ────
+          # Use find to check if any NVMe devices exist
+          if find /sys/block -name "nvme*n1" -type d 2>/dev/null | grep -q .; then
+            for dev in /sys/block/nvme*n1/queue/scheduler; do
+              if [[ -w "$dev" ]]; then
+                # Check if 'none' is a valid option
+                if grep -q "\[none\]" "$dev" || grep -q "none" "$dev"; then
+                  echo "Setting scheduler for $dev to none"
+                  echo none > "$dev" || echo "Failed to set scheduler for $dev"
+                else
+                  echo "Scheduler 'none' not available for $dev, available options: $(cat $dev)"
+                fi
+              else
+                echo "Cannot write to $dev, skipping"
+              fi
+            done
+          else
+            echo "No NVMe devices found, skipping NVMe scheduler configuration"
+          fi
+
         apply_check.sh: |-
           #!/bin/bash
-          echo "Verifying GPU clocks:"
-          nvidia-smi -q | grep -E "Persistence Mode|Graphics Clock|Memory Clock"
+          set -euo pipefail
+          
+          echo "=== GPU Configuration ==="
+          nvidia-smi --query-gpu=index,power.limit,clocks.sm,clocks.mem,persistence_mode --format=csv
+          
+          echo -e "\n=== NVMe Scheduler Status ==="
+          found_nvme=false
+          for dev in /sys/block/nvme*n1/queue/scheduler; do
+            if [[ -e "$dev" ]]; then
+              found_nvme=true
+              echo "$dev: $(cat $dev)"
+            fi
+          done
+          
+          if [[ "$found_nvme" == "false" ]]; then
+            echo "No NVMe devices found"
+          fi
