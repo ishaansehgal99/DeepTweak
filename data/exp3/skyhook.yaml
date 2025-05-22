@@ -1,0 +1,102 @@
+apiVersion: v1
+items:
+- apiVersion: skyhook.nvidia.com/v1alpha1
+  kind: Skyhook
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"skyhook.nvidia.com/v1alpha1","kind":"Skyhook","metadata":{"annotations":{},"labels":{"app.kubernetes.io/created-by":"skyhook-operator","app.kubernetes.io/part-of":"skyhook-operator"},"name":"demo"},"spec":{"additionalTolerations":[{"effect":"NoSchedule","key":"sku","value":"gpu"}],"nodeSelectors":{"matchLabels":{"kubernetes.io/hostname":"aks-maxlen-22271024-vmss000000"}},"packages":{"tuning":{"configInterrupts":{"grub.conf":{"type":"reboot"},"sysctl.conf":{"type":"restartAllServices"}},"configMap":{"grub.conf":"hugepagesz=1G\nhugepages=2\nhugepagesz=2M\nhugepages=5128","service_containerd.conf":"[Service]\nLimitSTACK=67108864\nLimitMEMLOCK=infinity","sysctl.conf":"fs.inotify.max_user_instances=65535\nfs.inotify.max_user_watches=524288\nkernel.threads-max=16512444\nvm.max_map_count=262144\nvm.min_free_kbytes=65536","ulimit.conf":"memlock: 128\nfsize: 1000"},"image":"ghcr.io/nvidia/skyhook-packages/tuning","interrupt":{"type":"reboot"},"version":"1.0.0"}}}}
+      skyhook.nvidia.com/version: v0.7.6+1ec0890
+    creationTimestamp: "2025-05-15T22:58:45Z"
+    finalizers:
+    - skyhook.nvidia.com/skyhook
+    generation: 15
+    labels:
+      app.kubernetes.io/created-by: skyhook-operator
+      app.kubernetes.io/part-of: skyhook-operator
+    name: demo
+    resourceVersion: "29367536"
+    uid: 4ec7a626-7f29-4086-a2b3-f183a777d036
+  spec:
+    additionalTolerations:
+    - effect: NoSchedule
+      key: sku
+      value: gpu
+    interruptionBudget: {}
+    nodeSelectors:
+      matchLabels:
+        kubernetes.io/hostname: aks-maxlen-22271024-vmss000000
+    packages:
+      tuning:
+        configInterrupts:
+          grub.conf:
+            type: reboot
+          sysctl.conf:
+            type: restartAllServices
+        configMap:
+          grub.conf: isolcpus=2-11
+          sysctl.conf: |-
+            kernel.sched_rt_runtime_us = -1
+            vm.swappiness = 1
+            vm.dirty_background_ratio = 3
+            vm.dirty_ratio = 8
+            net.core.netdev_max_backlog = 250000
+        image: ghcr.io/nvidia/skyhook-packages/tuning
+        interrupt:
+          type: reboot
+        name: tuning
+        resources:
+          cpuLimit: 500m
+          cpuRequest: 500m
+          memoryLimit: 256Mi
+          memoryRequest: 256Mi
+        version: 1.1.2
+    pause: false
+    podNonInterruptLabels: {}
+    runtimeRequired: false
+    serial: false
+  status:
+    completeNodes: 1/1
+    conditions:
+    - lastTransitionTime: "2025-05-22T02:22:46Z"
+      message: All nodes have tolerable taints.
+      reason: TaintNotTolerable
+      status: "False"
+      type: skyhook.nvidia.com/TaintNotTolerable
+    - lastTransitionTime: "2025-05-22T02:22:39Z"
+      message: Applying package [tuning:1.1.2] to node [aks-maxlen-22271024-vmss000000]
+      observedGeneration: 15
+      reason: ApplyPackage
+      status: "True"
+      type: skyhook.nvidia.com/ApplyPackage
+    - lastTransitionTime: "2025-05-22T02:22:46Z"
+      message: Transitioned [in_progress] -> [complete]
+      observedGeneration: 15
+      reason: complete
+      status: "True"
+      type: skyhook.nvidia.com/Transition
+    configUpdates:
+      tuning:
+      - grub.conf
+      - postApplyScript.sh
+      - sysctl.conf
+      - ulimit.conf
+    nodeBootIds:
+      aks-maxlen-22271024-vmss000000: e529a13c-7c5f-4fe4-9b51-b73327d18fed
+    nodeState:
+      aks-maxlen-22271024-vmss000000:
+        tuning|1.1.2:
+          image: ghcr.io/nvidia/skyhook-packages/tuning
+          name: tuning
+          stage: post-interrupt
+          state: complete
+          version: 1.1.2
+    nodeStatus:
+      aks-maxlen-22271024-vmss000000: complete
+    nodesInProgress: 0
+    observedGeneration: 15
+    packageList: tuning:1.1.2
+    status: complete
+kind: List
+metadata:
+  resourceVersion: ""

@@ -1,0 +1,114 @@
+apiVersion: v1
+items:
+- apiVersion: skyhook.nvidia.com/v1alpha1
+  kind: Skyhook
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"skyhook.nvidia.com/v1alpha1","kind":"Skyhook","metadata":{"annotations":{},"labels":{"app.kubernetes.io/created-by":"skyhook-operator","app.kubernetes.io/part-of":"skyhook-operator"},"name":"demo"},"spec":{"additionalTolerations":[{"effect":"NoSchedule","key":"sku","value":"gpu"}],"nodeSelectors":{"matchLabels":{"kubernetes.io/hostname":"aks-maxlen-22271024-vmss000000"}},"packages":{"tuning":{"configInterrupts":{"grub.conf":{"type":"reboot"},"sysctl.conf":{"type":"restartAllServices"}},"configMap":{"grub.conf":"hugepagesz=1G\nhugepages=2\nhugepagesz=2M\nhugepages=5128","service_containerd.conf":"[Service]\nLimitSTACK=67108864\nLimitMEMLOCK=infinity","sysctl.conf":"fs.inotify.max_user_instances=65535\nfs.inotify.max_user_watches=524288\nkernel.threads-max=16512444\nvm.max_map_count=262144\nvm.min_free_kbytes=65536","ulimit.conf":"memlock: 128\nfsize: 1000"},"image":"ghcr.io/nvidia/skyhook-packages/tuning","interrupt":{"type":"reboot"},"version":"1.0.0"}}}}
+      skyhook.nvidia.com/version: v0.7.6+1ec0890
+    creationTimestamp: "2025-05-15T22:58:45Z"
+    finalizers:
+    - skyhook.nvidia.com/skyhook
+    generation: 8
+    labels:
+      app.kubernetes.io/created-by: skyhook-operator
+      app.kubernetes.io/part-of: skyhook-operator
+    name: demo
+    resourceVersion: "29289627"
+    uid: 4ec7a626-7f29-4086-a2b3-f183a777d036
+  spec:
+    additionalTolerations:
+    - effect: NoSchedule
+      key: sku
+      value: gpu
+    interruptionBudget: {}
+    nodeSelectors:
+      matchLabels:
+        kubernetes.io/hostname: aks-maxlen-22271024-vmss000000
+    packages:
+      tuning:
+        configInterrupts:
+          grub.conf:
+            type: reboot
+          sysctl.conf:
+            type: restartAllServices
+        configMap:
+          grub.conf: |-
+            default_hugepagesz=1G hugepagesz=1G hugepages=4
+            intel_pstate=disable
+            processor.max_cstate=1
+            iommu=pt
+            isolcpus=nohz,domain,managed_irq 0-1
+          sysctl.conf: |-
+            vm.swappiness = 10
+            vm.overcommit_memory = 1
+            vm.nr_hugepages = 4
+            vm.max_map_count = 524288
+            vm.zone_reclaim_mode = 0
+            kernel.numa_balancing = 0
+            fs.inotify.max_user_watches = 1048576
+            fs.file-max = 2097152
+            net.core.rmem_max = 134217728
+            net.core.wmem_max = 134217728
+            net.ipv4.tcp_rmem = 4096 87380 134217728
+            net.ipv4.tcp_wmem = 4096 65536 134217728
+        image: ghcr.io/nvidia/skyhook-packages/tuning
+        interrupt:
+          type: reboot
+        name: tuning
+        resources:
+          cpuLimit: 500m
+          cpuRequest: 500m
+          memoryLimit: 256Mi
+          memoryRequest: 256Mi
+        version: 1.1.2
+    pause: false
+    podNonInterruptLabels: {}
+    runtimeRequired: false
+    serial: false
+  status:
+    completeNodes: 1/1
+    conditions:
+    - lastTransitionTime: "2025-05-21T23:15:20Z"
+      message: All nodes have tolerable taints.
+      reason: TaintNotTolerable
+      status: "False"
+      type: skyhook.nvidia.com/TaintNotTolerable
+    - lastTransitionTime: "2025-05-21T23:15:13Z"
+      message: Applying package [tuning:1.1.2] to node [aks-maxlen-22271024-vmss000000]
+      observedGeneration: 8
+      reason: ApplyPackage
+      status: "True"
+      type: skyhook.nvidia.com/ApplyPackage
+    - lastTransitionTime: "2025-05-21T23:15:20Z"
+      message: Transitioned [in_progress] -> [complete]
+      observedGeneration: 8
+      reason: complete
+      status: "True"
+      type: skyhook.nvidia.com/Transition
+    configUpdates:
+      tuning:
+      - sysctl.conf
+      - ulimit.conf
+      - grub.conf
+      - postApplyScript.sh
+    nodeBootIds:
+      aks-maxlen-22271024-vmss000000: 04fc8c25-0683-4a80-a825-6e3433b6f70f
+    nodeState:
+      aks-maxlen-22271024-vmss000000:
+        tuning|1.1.2:
+          image: ghcr.io/nvidia/skyhook-packages/tuning
+          name: tuning
+          stage: post-interrupt
+          state: complete
+          version: 1.1.2
+    nodeStatus:
+      aks-maxlen-22271024-vmss000000: complete
+    nodesInProgress: 0
+    observedGeneration: 8
+    packageList: tuning:1.1.2
+    status: complete
+kind: List
+metadata:
+  resourceVersion: ""
