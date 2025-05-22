@@ -101,7 +101,7 @@ def calculate_statistics(experiments):
     
     return stats
 
-def plot_time_series(experiments, metric, title, ylabel, figsize=(12, 6)):
+def plot_time_series(experiments, metric, title, ylabel, figsize=(12, 6), output_dir="plots"):
     """
     Plot a time series comparison of a specific metric across experiments
     """
@@ -122,10 +122,10 @@ def plot_time_series(experiments, metric, title, ylabel, figsize=(12, 6)):
     
     # Save the figure
     safe_title = title.replace(' ', '_').lower()
-    plt.savefig(f"plots/{safe_title}.png", dpi=300)
+    plt.savefig(f"{output_dir}/{safe_title}.png", dpi=300)
     plt.close()
 
-def plot_bar_comparison(stats, metric, title, ylabel, figsize=(10, 6)):
+def plot_bar_comparison(stats, metric, title, ylabel, figsize=(10, 6), output_dir="plots"):
     """
     Create a bar chart to compare a specific metric across experiments
     """
@@ -155,10 +155,10 @@ def plot_bar_comparison(stats, metric, title, ylabel, figsize=(10, 6)):
     
     # Save the figure
     safe_title = title.replace(' ', '_').lower()
-    plt.savefig(f"plots/{safe_title}.png", dpi=300)
+    plt.savefig(f"{output_dir}/{safe_title}.png", dpi=300)
     plt.close()
 
-def plot_kernel_parameter_comparison(experiments, stats):
+def plot_kernel_parameter_comparison(experiments, stats, output_dir="plots"):
     """
     Create a visualization that compares kernel parameters with performance metrics
     """
@@ -203,10 +203,10 @@ def plot_kernel_parameter_comparison(experiments, stats):
                 tweak, ha='center', va='bottom', rotation=90, color='black', fontsize=8)
     
     plt.tight_layout()
-    plt.savefig("plots/kernel_parameter_impact.png", dpi=300)
+    plt.savefig(f"{output_dir}/kernel_parameter_impact.png", dpi=300)
     plt.close()
 
-def create_summary_table(experiments, stats):
+def create_summary_table(experiments, stats, output_dir="results"):
     """
     Create a summary table of all experiments and their key metrics
     """
@@ -245,12 +245,12 @@ def create_summary_table(experiments, stats):
     
     # Create DataFrame and save to CSV
     summary_df = pd.DataFrame(summary_data)
-    os.makedirs('results', exist_ok=True)
-    summary_df.to_csv('results/experiment_summary.csv', index=False)
+    os.makedirs(output_dir, exist_ok=True)
+    summary_df.to_csv(f'{output_dir}/experiment_summary.csv', index=False)
     
     return summary_df
 
-def plot_performance_improvement(summary_df):
+def plot_performance_improvement(summary_df, output_dir="plots"):
     """
     Create a plot showing the relative performance improvement of each experiment
     compared to the baseline
@@ -289,56 +289,120 @@ def plot_performance_improvement(summary_df):
     plt.axhline(y=0, color='r', linestyle='-', alpha=0.3)
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
-    plt.savefig("plots/performance_improvement.png", dpi=300)
+    plt.savefig(f"{output_dir}/performance_improvement.png", dpi=300)
     plt.close()
 
-def main():
-    # Create output directories
-    os.makedirs('plots', exist_ok=True)
-    os.makedirs('results', exist_ok=True)
+def process_experiment_set(data_dir, output_prefix):
+    """
+    Process a set of experiments in the given directory
+    """
+    # Create output directories with the prefix
+    plots_dir = f"plots_{output_prefix}"
+    results_dir = f"results_{output_prefix}"
+    os.makedirs(plots_dir, exist_ok=True)
+    os.makedirs(results_dir, exist_ok=True)
     
     # Load experiment data
-    print("Loading experiment data...")
-    experiments = load_experiment_data()
+    print(f"Loading {output_prefix} experiment data...")
+    experiments = load_experiment_data(data_dir)
     
     if not experiments:
-        print("No experiment data found!")
+        print(f"No experiment data found in {data_dir}!")
         return
     
-    print(f"Found {len(experiments)} experiments: {', '.join(experiments.keys())}")
+    print(f"Found {len(experiments)} experiments for {output_prefix}: {', '.join(experiments.keys())}")
     
     # Calculate statistics
-    print("Calculating statistics...")
+    print(f"Calculating statistics for {output_prefix}...")
     stats = calculate_statistics(experiments)
     
     # Create summary table
-    print("Creating summary table...")
-    summary_df = create_summary_table(experiments, stats)
+    print(f"Creating summary table for {output_prefix}...")
+    summary_df = create_summary_table(experiments, stats, results_dir)
+    print(f"Summary for {output_prefix}:")
     print(summary_df)
     
-    # Create plots directory
-    print("Generating visualizations...")
+    # Create visualizations
+    print(f"Generating visualizations for {output_prefix}...")
     
     # Time series plots
-    plot_time_series(experiments, 'samples_per_sec', 'Training Throughput Over Time', 'Samples per Second')
-    plot_time_series(experiments, 'step_time', 'Step Time Over Time', 'Step Time (s)')
-    plot_time_series(experiments, 'gpu_util', 'GPU Utilization Over Time', 'GPU Utilization (%)')
-    plot_time_series(experiments, 'gpu_power_W', 'GPU Power Consumption Over Time', 'Power (W)')
-    plot_time_series(experiments, 'gpu_temp_C', 'GPU Temperature Over Time', 'Temperature (°C)')
-    plot_time_series(experiments, 'mem_percent', 'Memory Utilization Over Time', 'Memory (%)')
-    plot_time_series(experiments, 'cpu_percent', 'CPU Utilization Over Time', 'CPU (%)')
+    plot_time_series(experiments, 'samples_per_sec', f'{output_prefix} - Training Throughput Over Time', 'Samples per Second', output_dir=plots_dir)
+    plot_time_series(experiments, 'step_time', f'{output_prefix} - Step Time Over Time', 'Step Time (s)', output_dir=plots_dir)
+    plot_time_series(experiments, 'gpu_util', f'{output_prefix} - GPU Utilization Over Time', 'GPU Utilization (%)', output_dir=plots_dir)
+    plot_time_series(experiments, 'gpu_power_W', f'{output_prefix} - GPU Power Consumption Over Time', 'Power (W)', output_dir=plots_dir)
+    plot_time_series(experiments, 'gpu_temp_C', f'{output_prefix} - GPU Temperature Over Time', 'Temperature (°C)', output_dir=plots_dir)
+    plot_time_series(experiments, 'mem_percent', f'{output_prefix} - Memory Utilization Over Time', 'Memory (%)', output_dir=plots_dir)
+    plot_time_series(experiments, 'cpu_percent', f'{output_prefix} - CPU Utilization Over Time', 'CPU (%)', output_dir=plots_dir)
     
     # Bar comparison plots
-    plot_bar_comparison(stats, 'samples_per_sec', 'Average Training Throughput', 'Samples per Second')
-    plot_bar_comparison(stats, 'step_time', 'Average Step Time', 'Step Time (s)')
+    plot_bar_comparison(stats, 'samples_per_sec', f'{output_prefix} - Average Training Throughput', 'Samples per Second', output_dir=plots_dir)
+    plot_bar_comparison(stats, 'step_time', f'{output_prefix} - Average Step Time', 'Step Time (s)', output_dir=plots_dir)
     
     # Kernel parameter comparison
-    plot_kernel_parameter_comparison(experiments, stats)
+    plot_kernel_parameter_comparison(experiments, stats, output_dir=plots_dir)
     
     # Performance improvement plot
-    plot_performance_improvement(summary_df)
+    plot_performance_improvement(summary_df, output_dir=plots_dir)
     
-    print("Analysis complete! Results are in the 'plots' and 'results' directories.")
+    print(f"Analysis for {output_prefix} complete!")
+    return summary_df
+
+def main():
+    # Define experiment sets
+    experiment_sets = [
+        {"data_dir": "data/one_node_one_gpu", "output_prefix": "one_node_one_gpu"},
+        {"data_dir": "data/one_node_two_gpu", "output_prefix": "one_node_two_gpu"}
+    ]
+    
+    # Process each experiment set
+    all_summaries = {}
+    for exp_set in experiment_sets:
+        print(f"\nProcessing {exp_set['output_prefix']} experiments...\n")
+        summary = process_experiment_set(exp_set["data_dir"], exp_set["output_prefix"])
+        if summary is not None:
+            all_summaries[exp_set["output_prefix"]] = summary
+    
+    # Generate cross-configuration comparison if both sets have data
+    if len(all_summaries) > 1:
+        print("\nGenerating cross-configuration comparison...\n")
+        
+        # Create a comparison of best results from each configuration
+        os.makedirs("comparison", exist_ok=True)
+        
+        # Find best experiment in each set (highest samples/sec)
+        best_configs = {}
+        for config, summary in all_summaries.items():
+            best_exp = summary.loc[summary['Samples/Sec'].idxmax()]
+            best_configs[config] = best_exp
+        
+        # Create comparison dataframe
+        comparison_df = pd.DataFrame(best_configs).T
+        comparison_df.index.name = "Configuration"
+        comparison_df.reset_index(inplace=True)
+        
+        # Save comparison to CSV
+        comparison_df.to_csv("comparison/best_configuration_comparison.csv", index=False)
+        print("Comparison of best configurations:")
+        print(comparison_df)
+        
+        # Create comparison bar chart
+        plt.figure(figsize=(10, 6))
+        bars = plt.bar(comparison_df["Configuration"], comparison_df["Samples/Sec"], 
+                      color=sns.color_palette('viridis', len(comparison_df)))
+        
+        # Add value labels
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width()/2., height + 0.02*max(comparison_df["Samples/Sec"]),
+                    f'{height:.2f}', ha='center', va='bottom')
+        
+        plt.title('Best Performance Comparison Across Configurations')
+        plt.ylabel('Samples per Second (higher is better)')
+        plt.tight_layout()
+        plt.savefig("comparison/best_configuration_comparison.png", dpi=300)
+        plt.close()
+    
+    print("\nAll analyses complete! Results are in the respective directories.")
 
 if __name__ == "__main__":
     main()

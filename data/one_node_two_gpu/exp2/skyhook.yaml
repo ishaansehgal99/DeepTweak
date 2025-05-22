@@ -1,0 +1,34 @@
+apiVersion: skyhook.nvidia.com/v1alpha1
+kind: Skyhook
+metadata:
+  name: exp1-gpu-opt
+spec:
+  nodeSelectors:
+    matchLabels:
+      kubernetes.io/hostname: aks-maxlen1-37349144-vmss000000  # Replace with your node
+  additionalTolerations:
+    - key: sku
+      value: gpu
+      effect: NoSchedule
+  packages:
+    tuning:
+      version: 1.1.3
+      image: ghcr.io/nvidia/skyhook-packages/tuning
+      configMap:
+        grub.conf: |-
+          
+    gpumax:
+      version: 1.1.0
+      image: ghcr.io/nvidia/skyhook-packages/shellscript
+      configMap:
+        apply.sh: |-
+          #!/bin/bash
+          nvidia-smi -pm 1
+          nvidia-smi -acp 0
+          # Set max clocks - adjust if not Tesla M60
+          nvidia-smi -lgc 1177,1177
+          nvidia-smi -lmc 2505
+        apply_check.sh: |-
+          #!/bin/bash
+          echo "Verifying GPU clocks:"
+          nvidia-smi -q | grep -E "Persistence Mode|Graphics Clock|Memory Clock"

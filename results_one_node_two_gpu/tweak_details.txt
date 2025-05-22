@@ -1,0 +1,28 @@
+=== exp1 ===
+
+## Kernel Tweaks ##
+No kernel parameter tweaks
+
+## Script Tweaks ##
+-- gpumax --
+#!/bin/bash
+nvidia-smi -pm 1
+nvidia-smi -acp 0
+# Set max clocks - adjust if not Tesla M60
+nvidia-smi -lgc 1177,1177
+nvidia-smi -lmc 2505
+
+
+==================================================
+
+=== base ===
+
+## Kernel Tweaks ##
+Error parsing tweaks
+
+## Script Tweaks ##
+None
+
+
+==================================================
+
