@@ -1,66 +1,69 @@
-# DeepTweak Experiment Visualization
+# DeepTweak
 
-This project analyzes the impact of OS kernel parameter tweaks on AI workload performance. The visualization script processes benchmark data from multiple experiments and generates insightful visualizations.
+**Performance analysis tool for AI workloads with OS kernel parameter optimization**
 
-## Directory Structure
+DeepTweak analyzes how different Linux kernel parameter tweaks affect AI training performance on Kubernetes. This project uses [KAITO](https://github.com/Azure/kaito) for AI workload orchestration and [Skyhook](https://github.com/skyhookdm/skyhook) for OS-level optimizations, all running on Kubernetes infrastructure.
 
-- `data/` - Contains the experiment data
-  - `base/` - Baseline experiment (no tweaks)
-  - `exp1/`, `exp2/`, `exp3/` - Different OS parameter tweak experiments
-  - Each experiment folder contains:
-    - `benchmark.csv` - Performance metrics collected during the experiment
-    - `skyhook.yaml` - Configuration of OS kernel parameters applied
+## What it does
 
-## Setup
+- Compares AI training performance across different kernel parameter configurations
+- Analyzes metrics like throughput, GPU utilization, memory usage, and training speed
+- Generates visualizations showing the impact of specific kernel tweaks
+- Identifies which optimizations provide the best performance improvements
+- Demonstrates cloud-native AI optimization using Kubernetes ecosystem tools
 
-1. Install the required dependencies:
+## Architecture
 
-```bash
-pip install -r requirements.txt
+- **KAITO** - Manages AI model inference and training workloads on Kubernetes
+- **Skyhook** - Applies OS kernel parameter optimizations via Kubernetes DaemonSets
+- **Kubernetes** - Orchestrates the entire experimental infrastructure
+- **DeepTweak** - Analyzes and visualizes the performance impact
+
+## Quick Start
+
+1. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Run analysis:**
+   ```bash
+   python visualize.py
+   ```
+
+3. **View results:**
+   - Plots saved to `plots_*/` directories
+   - Summary data in `results_*/` directories
+
+## Data Structure
+
+```
+data/
+├── one_node_one_gpu/          # Single GPU experiments
+│   ├── base/                  # Baseline (no tweaks)
+│   ├── exp1/, exp2/, exp3/    # Different kernel configurations
+├── one_node_two_gpu/          # Multi-GPU experiments
+    └── ...
 ```
 
-## Usage
+Each experiment contains:
+- `benchmark.csv` - Performance metrics over time
+- `skyhook.yaml` - Kernel parameter configuration applied via Skyhook
 
-Run the visualization script:
+## Key Metrics
 
-```bash
-python visualize.py
-```
-
-This will:
-1. Load all experiment data from the `data/` directory
-2. Calculate statistics for each experiment
-3. Generate visualizations comparing the experiments
-4. Create a summary table of results
+- **Step time** - Training iteration duration
+- **Samples/sec** - Training throughput
+- **GPU utilization** - Hardware efficiency
+- **Memory usage** - Resource consumption
+- **Temperature & Power** - Thermal/energy impact
 
 ## Output
 
-The script generates the following outputs:
+The tool generates:
+- Time series plots comparing performance over time
+- Bar charts showing average improvements
+- Kernel parameter impact analysis
+- Performance summary tables
 
-- `plots/` directory:
-  - Time series plots comparing metrics over time
-  - Bar charts comparing average metrics across experiments
-  - Kernel parameter impact visualization
-  - Performance improvement comparison
-
-- `results/` directory:
-  - `experiment_summary.csv` - Summary table with key metrics for each experiment
-
-## Metrics Analyzed
-
-The script analyzes the following metrics:
-- Step time
-- Samples per second
-- CPU utilization
-- Memory utilization
-- GPU utilization
-- GPU power consumption
-- GPU temperature
-- GPU memory utilization
-
-## Interpreting Results
-
-The visualizations help identify:
-1. Which kernel parameter tweaks resulted in performance improvements
-2. The impact of different tweaks on various system metrics
-3. Trade-offs between performance and resource utilization
+Perfect for identifying which kernel tweaks actually improve AI training performance in your environment.
